@@ -1,0 +1,208 @@
+# Datacenter Sentinel Skill Configuration
+# Copy this file to /etc/picclaw/skills/datacenter-sentinel/config.yaml
+# and customize for your environment
+
+# Sensor GPIO configuration
+sensors:
+  dht22:
+    enabled: true
+    gpio_pin: 17                # LicheeRV-Nano GPIO17 (or Pi GPIO4)
+    read_interval: 300          # Read every 5 minutes (seconds)
+    thresholds:
+      temp_warning: 28.0        # Celsius
+      temp_critical: 35.0       # Celsius
+      humidity_warning_low: 30.0    # % RH
+      humidity_warning_high: 70.0   # % RH
+      humidity_critical_high: 85.0  # % RH
+  
+  mq2_smoke:
+    enabled: true
+    gpio_pin: 22                # Digital output pin
+    mode: digital               # "digital" or "analog"
+    threshold: HIGH             # Trigger on HIGH signal
+    debounce_ms: 2000           # Ignore rapid re-triggers (2 seconds)
+    warmup_seconds: 120         # MQ-2 needs 2min warmup after boot
+  
+  water_leak:
+    floor_sensor:
+      enabled: true
+      gpio_pin: 23
+      threshold: HIGH           # Trigger when wet
+      debounce_ms: 1000
+      location: "Under raised floor, row 3"
+    
+    ceiling_sensor:
+      enabled: true
+      gpio_pin: 24
+      threshold: HIGH
+      debounce_ms: 1000
+      location: "Overhead pipe near A/C unit"
+
+# Alert notification channels
+alerts:
+  # Telegram Bot
+  telegram:
+    enabled: false              # Set to true to enable
+    bot_token: ""               # Get from @BotFather
+    chat_id: ""                 # Your Telegram chat ID
+    message_template: |
+      🚨 Datacenter Alert: {severity}
+      
+      Sensor: {sensor}
+      Value: {value} {unit}
+      Threshold: {threshold}
+      Location: {location}
+      Time: {timestamp}
+      
+      Action required: {action}
+  
+  # Discord Webhook
+  discord:
+    enabled: false
+    webhook_url: ""
+    username: "Datacenter Sentinel"
+  
+  # Local audible alarm
+  local_alarm:
+    buzzer_gpio: 25
+    enabled: true
+    duration_seconds: 10        # Beep for 10 seconds
+    repeat_interval: 300        # Re-alarm every 5 minutes if not cleared
+  
+  # Status LED indicator
+  status_led:
+    red_gpio: 26                # Red = alert/error
+    green_gpio: 27              # Green = normal
+    enabled: true
+    patterns:
+      normal: "solid_green"
+      warning: "blink_red_slow"
+      critical: "blink_red_fast"
+  
+  # Escalation to MoltClaw (cloud)
+  escalation:
+    moltclaw_url: "https://your-moltclaw-instance.example.com/api/alerts"
+    enabled: false
+    api_key: ""
+    on_critical_only: true      # Only escalate critical alerts
+
+# Data logging
+logging:
+  # InfluxDB time-series database
+  influxdb:
+    enabled: false
+    url: "http://influxdb.local:8086"
+    database: "datacenter_sensors"
+    username: ""
+    password: ""
+    measurement: "sensors"
+  
+  # Local CSV file (lightweight option)
+  local_csv:
+    enabled: true
+    path: "/var/log/picclaw/datacenter_sensors.csv"
+    rotate_daily: true
+    keep_days: 30
+  
+  # Syslog
+  syslog:
+    enabled: true
+    facility: "local0"
+    level: "info"
+
+# Alert rules
+rules:
+  # Temperature alerts
+  temp_high_warning:
+    condition: "temp >= 28.0"
+    severity: "warning"
+    action: "Send alert, log event"
+    cooldown: 1800              # Don't re-alert for 30 minutes
+  
+  temp_high_critical:
+    condition: "temp >= 35.0"
+    severity: "critical"
+    action: "Send alert, sound alarm, escalate to MoltClaw"
+    cooldown: 300               # Re-alert every 5 minutes until resolved
+  
+  # Smoke detection
+  smoke_detected:
+    condition: "mq2 == HIGH"
+    severity: "critical"
+    action: "Immediate alert, sound alarm, escalate"
+    cooldown: 60                # Re-alert every minute
+  
+  # Water leak
+  water_leak_floor:
+    condition: "water_floor == HIGH"
+    severity: "critical"
+    action: "Immediate alert, sound alarm, escalate"
+    cooldown: 120
+  
+  water_leak_ceiling:
+    condition: "water_ceiling == HIGH"
+    severity: "critical"
+    action: "Immediate alert, sound alarm, escalate"
+    cooldown: 120
+
+# Advanced settings
+advanced:
+  # Watchdog (restart service if frozen)
+  watchdog:
+    enabled: true
+    timeout_seconds: 600        # Restart if no sensor reading for 10 min
+  
+  # Self-test on boot
+  self_test:
+    enabled: true
+    test_all_sensors: true
+    send_startup_notification: true
+  
+  # Sensor calibration
+  calibration:
+    dht22_offset_temp: 0.0      # Add this to DHT22 readings (°C)
+    dht22_offset_humidity: 0.0  # Add this to DHT22 readings (% RH)
+
+# Maintenance schedule
+maintenance:
+  # Automatic sensor cleaning reminder
+  sensor_cleaning_days: 90      # Remind every 90 days
+  
+  # MQ-2 recalibration reminder
+  mq2_recalibration_days: 180   # Remind every 6 months
+  
+  # Battery backup test (if using UPS)
+  battery_test_days: 30         # Test monthly
+
+---
+
+# Configuration Notes:
+
+## GPIO Pin Assignment Summary
+# LicheeRV-Nano (or Raspberry Pi Zero 2 W):
+# - GPIO17 (Pi: GPIO4)  : DHT22 Data
+# - GPIO22 (Pi: GPIO17) : MQ-2 Smoke Digital Out
+# - GPIO23 (Pi: GPIO27) : Water Sensor #1 (Floor)
+# - GPIO24 (Pi: GPIO22) : Water Sensor #2 (Ceiling)
+# - GPIO25 (Pi: GPIO18) : Buzzer (PWM)
+# - GPIO26 (Pi: GPIO23) : Status LED Red
+# - GPIO27 (Pi: GPIO24) : Status LED Green
+
+## Alert Priority Levels:
+# - info:     Normal operation, logging only
+# - warning:  Threshold breach, notify but not urgent
+# - critical: Immediate action required, escalate
+
+## Testing Commands:
+# picclaw skill run datacenter-sentinel check      # Manual sensor check
+# picclaw skill run datacenter-sentinel monitor    # Live readings
+# picclaw skill run datacenter-sentinel test-alert # Test notification system
+# picclaw skill run datacenter-sentinel simulate --temp=40  # Simulate high temp
+
+## Environment Variables (for secrets):
+# Export these before starting PicClaw service:
+# export TELEGRAM_BOT_TOKEN="your_bot_token_here"
+# export TELEGRAM_CHAT_ID="your_chat_id_here"
+# export MOLTCLAW_API_KEY="your_api_key_here"
+#
+# Then reference in config as: "${TELEGRAM_BOT_TOKEN}"

@@ -1,0 +1,79 @@
+# DC Guardian — Alert Thresholds & Escalation Rules
+# Edit this file and run: picclaw config push alerts.yaml --kit dc-guardian
+
+alerts:
+  # ── Temperature ─────────────────────────────────────────────────────────────
+  - id: temp_warn
+    sensor: temperature_humidity
+    field: temperature_c
+    condition: "value > 27.0"
+    severity: warn
+    message: "Temperature elevated: {{ value }}°C (threshold 27°C)"
+    outputs: [log, webhook]
+    cooldown_s: 300            # max 1 alert per 5 min
+
+  - id: temp_critical
+    sensor: temperature_humidity
+    field: temperature_c
+    condition: "value > 32.0"
+    severity: critical
+    message: "CRITICAL: Temperature {{ value }}°C — possible cooling failure!"
+    outputs: [log, webhook, buzzer]
+    cooldown_s: 60
+
+  # ── Humidity ─────────────────────────────────────────────────────────────────
+  - id: humidity_high
+    sensor: temperature_humidity
+    field: humidity_pct
+    condition: "value > 60.0"
+    severity: warn
+    message: "Humidity high: {{ value }}% RH — condensation risk"
+    outputs: [log, webhook]
+    cooldown_s: 600
+
+  - id: humidity_low
+    sensor: temperature_humidity
+    field: humidity_pct
+    condition: "value < 20.0"
+    severity: warn
+    message: "Humidity low: {{ value }}% RH — electrostatic discharge risk"
+    outputs: [log, webhook]
+    cooldown_s: 600
+
+  # ── Smoke / Gas ──────────────────────────────────────────────────────────────
+  - id: smoke_detected
+    sensor: smoke
+    field: detected
+    condition: "value == true"
+    severity: critical
+    message: "SMOKE / GAS DETECTED — evacuate and investigate immediately"
+    outputs: [log, webhook, buzzer]
+    cooldown_s: 30             # re-alert every 30 s until cleared
+
+  # ── Water Leak ───────────────────────────────────────────────────────────────
+  - id: water_zone1
+    sensor: water_zone_1
+    field: wet
+    condition: "value == true"
+    severity: critical
+    message: "WATER LEAK — Zone 1 (CRAC drain area)"
+    outputs: [log, webhook, buzzer]
+    cooldown_s: 60
+
+  - id: water_zone2
+    sensor: water_zone_2
+    field: wet
+    condition: "value == true"
+    severity: critical
+    message: "WATER LEAK — Zone 2 (UPS / battery area)"
+    outputs: [log, webhook, buzzer]
+    cooldown_s: 60
+
+  # ── Sensor health ─────────────────────────────────────────────────────────────
+  - id: sensor_offline
+    sensor: any
+    condition: "last_seen_s > 120"
+    severity: warn
+    message: "Sensor {{ sensor_id }} offline for {{ last_seen_s }}s"
+    outputs: [log, webhook]
+    cooldown_s: 300

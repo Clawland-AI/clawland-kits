@@ -1,0 +1,125 @@
+name: dc-guardian
+version: "1.0.0"
+description: >
+  Data center night-shift monitor.
+  Tracks temperature, humidity, smoke, and water leaks.
+  Replaces $48,000/yr human operator with $88 hardware kit.
+
+# ── Board ──────────────────────────────────────────────────────────────────────
+board:
+  model: licheerv-nano
+  arch: riscv64
+  os: picclaw-linux
+
+# ── GPIO pin assignments ───────────────────────────────────────────────────────
+gpio:
+  dht22_data: 11        # GPIO_A28 — DHT22 single-wire data
+  mq2_do:     13        # GPIO_A29 — MQ-2 digital threshold output (LOW = smoke)
+  water_1:    15        # GPIO_A30 — Water leak sensor zone 1 (HIGH = wet)
+  water_2:    16        # GPIO_A31 — Water leak sensor zone 2 (HIGH = wet)
+  buzzer:     18        # GPIO_B0  — Active buzzer (HIGH = on)
+
+# ── Sensor drivers ─────────────────────────────────────────────────────────────
+sensors:
+  - id: temperature_humidity
+    driver: dht22
+    pin: ${gpio.dht22_data}
+    poll_interval_s: 30
+    startup_delay_s: 2       # DHT22 needs 1–2 s after power-on
+
+  - id: smoke
+    driver: mq2_digital
+    pin: ${gpio.mq2_do}
+    poll_interval_s: 5
+    startup_delay_s: 60      # MQ-2 heater warm-up — alerts suppressed during this window
+    active_low: true          # DO goes LOW when smoke threshold is exceeded
+
+  - id: water_zone_1
+    driver: resistive_water
+    pin: ${gpio.water_1}
+    poll_interval_s: 10
+    active_high: true         # Signal goes HIGH when water detected
+
+  - id: water_zone_2
+    driver: resistive_water
+    pin: ${gpio.water_2}
+    poll_interval_s: 10
+    active_high: true
+
+# ── Alert thresholds ───────────────────────────────────────────────────────────
+# Tune these in alerts.yaml; values here are defaults.
+thresholds:
+  temperature:
+    warn_above_c:  27.0
+    alert_above_c: 32.0
+  humidity:
+    warn_above_pct:  60
+    warn_below_pct:  20
+  smoke:
+    alert_on_detect: true    # any DO trigger → immediate alert
+  water:
+    alert_on_detect: true    # any wetness → immediate alert
+
+# ── Alert outputs ──────────────────────────────────────────────────────────────
+outputs:
+  buzzer:
+    pin: ${gpio.buzzer}
+    pattern:
+      warn:  { on_ms: 100, off_ms: 900, repeat: 5 }
+      alert: { on_ms: 500, off_ms: 200, repeat: -1 }  # -1 = continuous until cleared
+
+  webhook:
+    enabled: true
+    url: "${env.PICCLAW_WEBHOOK_URL}"    # set in picclaw.conf or environment
+    method: POST
+    headers:
+      Content-Type: application/json
+      Authorization: "Bearer ${env.PICCLAW_API_KEY}"
+    payload: |
+      {
+        "kit": "dc-guardian",
+        "event": "{{ event.type }}",
+        "severity": "{{ event.severity }}",
+        "sensor": "{{ event.sensor_id }}",
+        "value": {{ event.value }},
+        "unit": "{{ event.unit }}",
+        "timestamp": "{{ event.timestamp_iso }}",
+        "location": "${env.PICCLAW_LOCATION | default('data-center-floor-1')}"
+      }
+    retry:
+      max_attempts: 3
+      backoff_s: 5
+
+  log:
+    path: /var/log/picclaw/dc-guardian.log
+    format: json
+    rotate_mb: 10
+    keep_files: 5
+
+# ── Health reporting ───────────────────────────────────────────────────────────
+health:
+  report_interval_s: 300    # heartbeat every 5 min
+  include_readings: true
+
+# ── Night mode ─────────────────────────────────────────────────────────────────
+# Night mode increases polling frequency; data centers run 24/7 so this
+# is active around the clock. Adjust if the facility has low-traffic windows.
+schedule:
+  night_mode:
+    enabled: false
+    start: "22:00"
+    end:   "06:00"
+    poll_multiplier: 0.5    # poll 2× as often during night hours
+
+# ── Metadata ──────────────────────────────────────────────────────────────────
+metadata:
+  kit_id: dc-guardian
+  replaces: "$48,000/yr data center night-shift operator"
+  kit_cost_usd: 88
+  tags:
+    - datacenter
+    - temperature
+    - smoke
+    - water-leak
+    - 24-7
+  docs: https://github.com/Clawland-AI/clawland-kits/tree/main/kits/dc-guardian

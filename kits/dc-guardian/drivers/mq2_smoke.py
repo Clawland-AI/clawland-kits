@@ -33,24 +33,24 @@ class MQ2Sensor:
         "Smoke": {"min": 300, "max": 10000},
     }
 
-    def __init__(self, digital_pin: int = 17, analog_pin: int = 18,
+    def __init__(self, digital_pin: int = 17, adc_channel: int = 0,
                  threshold_ppm: int = 1000):
         """
         Initialize MQ-2 sensor
 
         Args:
             digital_pin: GPIO pin for digital output (default: 17)
-            analog_pin: GPIO pin for analog output (default: 18)
+            adc_channel: ADC channel (0-7) for analog output (default: 0)
             threshold_ppm: Alarm threshold in ppm (default: 1000)
         """
         self.digital_pin = digital_pin
-        self.analog_pin = analog_pin
+        self.adc_channel = adc_channel
         self.threshold_ppm = threshold_ppm
         self.spi = None
 
         # Setup GPIO
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(digital_pin, GPIO.IN)
+        GPIO.setup(digital_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
         # Setup SPI for analog reading
         try:
@@ -68,10 +68,15 @@ class MQ2Sensor:
         """
         Read digital output (gas detected or not)
 
+        Note: MQ-2 modules use active-LOW logic:
+        - D0 is LOW when gas detected
+        - D0 is HIGH when air is clean
+
         Returns:
-            True if gas detected (concentration > threshold)
+            True if gas detected (D0 is LOW)
         """
-        return GPIO.input(self.digital_pin) == GPIO.HIGH
+        # MQ-2 uses active-LOW: LOW = gas detected, HIGH = clean air
+        return GPIO.input(self.digital_pin) == GPIO.LOW
 
     def read_analog(self) -> Optional[int]:
         """
@@ -84,13 +89,13 @@ class MQ2Sensor:
             return None
 
         try:
-            # MCP3008 ADC read
-            adc_channel = self.analog_pin  # Assuming direct mapping
-            if adc_channel < 0 or adc_channel > 7:
+            # MCP3008 ADC read (channels 0-7)
+            if self.adc_channel < 0 or self.adc_channel > 7:
+                print(f"Error: Invalid ADC channel {self.adc_channel}. Must be 0-7.")
                 return None
 
-            # SPI transaction
-            r = self.spi.xfer2([1, (8 + adc_channel) << 4, 0])
+            # SPI transaction for MCP3008
+            r = self.spi.xfer2([1, (8 + self.adc_channel) << 4, 0])
             adc_value = ((r[1] & 3) << 8) + r[2]
             return adc_value
 
@@ -274,17 +279,19 @@ if __name__ == "__main__":
 
             while True:
                 status = sensor.get_status()
+                ppm_str = f"{status['ppm']:.1f}" if status['ppm'] is not None else "N/A"
                 print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] "
                       f"Gas: {'DETECTED' if status['gas_detected'] else 'CLEAR'} "
-                      f"PPM: {status['ppm']:.1f if status['ppm'] else 'N/A'} "
+                      f"PPM: {ppm_str} "
                       f"Alert: {'⚠️ YES' if status['alert'] else '✓ NO'}")
                 time.sleep(args.interval)
 
         else:
             status = sensor.get_status()
+            ppm_str = f"{status['ppm']:.1f}" if status['ppm'] is not None else "N/A"
             print("MQ-2 Sensor Status:")
             print(f"  Gas Detected: {'YES ⚠️' if status['gas_detected'] else 'NO ✓'}")
-            print(f"  PPM: {status['ppm']:.1f if status['ppm'] else 'N/A'}")
+            print(f"  PPM: {ppm_str}")
             print(f"  Threshold: {status['threshold_ppm']} PPM")
             print(f"  Alert: {'YES ⚠️' if status['alert'] else 'NO ✓'}")
             if status['possible_gases']:

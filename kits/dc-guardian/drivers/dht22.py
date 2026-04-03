@@ -56,7 +56,10 @@ class DHT22Sensor:
                 27: board.D27,
             }
 
-            board_pin = pin_map.get(pin, board.D4)
+            if pin not in pin_map:
+                raise ValueError(f"Unsupported pin {pin}. Supported pins: {list(pin_map.keys())}")
+
+            board_pin = pin_map[pin]
             self.sensor = adafruit_dht.DHT22(board_pin, use_pulseio=False)
 
         except Exception as e:
@@ -123,7 +126,7 @@ class DHT22Sensor:
             "sensor": "DHT22",
             "pin": self.pin,
             "temperature_celsius": temp,
-            "temperature_fahrenheit": temp * 9/5 + 32 if temp else None,
+            "temperature_fahrenheit": temp * 9/5 + 32 if temp is not None else None,
             "humidity_percent": humidity,
             "timestamp": time.time(),
             "status": "ok" if temp is not None and humidity is not None else "error"
@@ -148,10 +151,10 @@ class DHT22Sensor:
         temp, humidity = self.read()
 
         alerts = {
-            "temperature_high": temp > temp_high if temp else False,
-            "temperature_low": temp < temp_low if temp else False,
-            "humidity_high": humidity > humidity_high if humidity else False,
-            "humidity_low": humidity < humidity_low if humidity else False,
+            "temperature_high": temp > temp_high if temp is not None else False,
+            "temperature_low": temp < temp_low if temp is not None else False,
+            "humidity_high": humidity > humidity_high if humidity is not None else False,
+            "humidity_low": humidity < humidity_low if humidity is not None else False,
             "current_temperature": temp,
             "current_humidity": humidity,
             "thresholds": {
@@ -197,18 +200,34 @@ if __name__ == "__main__":
 
             while True:
                 status = sensor.get_status()
+                temp_c = status['temperature_celsius']
+                temp_f = status['temperature_fahrenheit']
+                humidity = status['humidity_percent']
+
+                temp_c_str = f"{temp_c:.1f}" if temp_c is not None else "N/A"
+                temp_f_str = f"{temp_f:.1f}" if temp_f is not None else "N/A"
+                humidity_str = f"{humidity:.1f}" if humidity is not None else "N/A"
+
                 print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] "
-                      f"Temp: {status['temperature_celsius']:.1f}°C "
-                      f"({status['temperature_fahrenheit']:.1f}°F) "
-                      f"Humidity: {status['humidity_percent']:.1f}%")
+                      f"Temp: {temp_c_str}°C "
+                      f"({temp_f_str}°F) "
+                      f"Humidity: {humidity_str}%")
                 time.sleep(args.interval)
 
         else:
             status = sensor.get_status()
+            temp_c = status['temperature_celsius']
+            temp_f = status['temperature_fahrenheit']
+            humidity = status['humidity_percent']
+
+            temp_c_str = f"{temp_c:.1f}" if temp_c is not None else "N/A"
+            temp_f_str = f"{temp_f:.1f}" if temp_f is not None else "N/A"
+            humidity_str = f"{humidity:.1f}" if humidity is not None else "N/A"
+
             print("DHT22 Sensor Status:")
-            print(f"  Temperature: {status['temperature_celsius']:.1f}°C "
-                  f"({status['temperature_fahrenheit']:.1f}°F)")
-            print(f"  Humidity: {status['humidity_percent']:.1f}%")
+            print(f"  Temperature: {temp_c_str}°C "
+                  f"({temp_f_str}°F)")
+            print(f"  Humidity: {humidity_str}%")
             print(f"  Status: {status['status']}")
 
     except KeyboardInterrupt:

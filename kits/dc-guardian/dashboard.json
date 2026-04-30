@@ -1,0 +1,185 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "DC Guardian — Data Center Night Shift Monitoring Dashboard",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "🌡️ Temperature (Hot Aisle)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "dc_guardian_temperature_c{sensor=\"dht22_hot\"}",
+          "legendFormat": "Hot Aisle (°C)",
+          "refId": "A"
+        },
+        {
+          "expr": "dc_guardian_temperature_c{sensor=\"dht22_cold\"}",
+          "legendFormat": "Cold Aisle (°C)",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "Temperature (°C)",
+            "fillOpacity": 10
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 28 },
+              { "color": "red", "value": 32 }
+            ]
+          },
+          "unit": "celsius"
+        }
+      }
+    },
+    {
+      "title": "💧 Humidity",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "dc_guardian_humidity{sensor=\"dht22_hot\"}",
+          "legendFormat": "Hot Aisle (%RH)",
+          "refId": "A"
+        },
+        {
+          "expr": "dc_guardian_humidity{sensor=\"dht22_cold\"}",
+          "legendFormat": "Cold Aisle (%RH)",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "Humidity (%RH)",
+            "fillOpacity": 10
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 55 },
+              { "color": "red", "value": 65 }
+            ]
+          },
+          "unit": "percent"
+        }
+      }
+    },
+    {
+      "title": "💨 Smoke / Gas Levels",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "dc_guardian_lpg_ppm{sensor=\"mq2_crac\"}",
+          "legendFormat": "LPG near CRAC (ppm)",
+          "refId": "A"
+        },
+        {
+          "expr": "dc_guardian_smoke_ppm{sensor=\"mq2_cable\"}",
+          "legendFormat": "Smoke cable tray (ppm)",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "Concentration (ppm)",
+            "fillOpacity": 10
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 80 },
+              { "color": "red", "value": 150 }
+            ]
+          },
+          "unit": "ppm"
+        }
+      }
+    },
+    {
+      "title": "💧 Water Leak Status",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "dc_guardian_water_detected{sensor=\"water_floor\"}",
+          "legendFormat": "Raised Floor",
+          "refId": "A"
+        },
+        {
+          "expr": "dc_guardian_water_detected{sensor=\"water_pipe\"}",
+          "legendFormat": "Cooling Pipes",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DRY ✅", "color": "green" }, "1": { "text": "WET 🚨", "color": "red" } } }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "📊 Current Readings",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "dc_guardian_temperature_c",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "center" }
+        }
+      }
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["dc-guardian", "monitoring", "datacenter"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "DC Guardian — Data Center Monitoring",
+  "uid": "dc-guardian-v1",
+  "version": 1
+}

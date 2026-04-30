@@ -1,0 +1,96 @@
+# DC Guardian — PicClaw Skill Configuration
+# 
+# This file configures the DC Guardian monitoring skill for PicClaw.
+# Place in /etc/picclaw/skills/dc-guardian.yaml or ~/.picclaw/skills/dc-guardian.yaml
+
+skill:
+  name: dc-guardian
+  version: "1.0.0"
+  description: "Data center night shift monitoring — temp, smoke, water leak detection"
+  author: "Clawland Community"
+  license: "CERN-OHL-S-2.0"
+
+hardware:
+  board: licheerv-nano
+  sensors:
+    - id: dht22_hot
+      type: dht22
+      gpio: 12
+      name: "Hot Aisle Temperature"
+      location: "Hot aisle intake"
+      
+    - id: dht22_cold
+      type: dht22
+      gpio: 13
+      name: "Cold Aisle Temperature"
+      location: "Cold aisle exhaust"
+      
+    - id: mq2_crac
+      type: mq2
+      analog_pin: 14
+      name: "CRAC Smoke Detector"
+      location: "Near CRAC unit"
+      
+    - id: mq2_cable
+      type: mq2
+      analog_pin: 15
+      name: "Cable Tray Smoke Detector"
+      location: "Above cable trays"
+      
+    - id: water_floor
+      type: water_leak
+      gpio: 16
+      name: "Raised Floor Water Sensor"
+      location: "Under raised flooring"
+      
+    - id: water_pipe
+      type: water_leak
+      gpio: 17
+      name: "Cooling Pipe Water Sensor"
+      location: "Near cooling water pipes"
+
+network:
+  primary: ethernet
+  fallback: wifi
+  wifi_ssid: ""           # Set via environment: PICCLAW_WIFI_SSID
+  wifi_password: ""       # Set via environment: PICCLAW_WIFI_PASSWORD
+
+monitoring:
+  read_interval: 30       # Seconds between sensor reads
+  report_interval: 300    # Seconds between status reports (5 min)
+  warmup_delay: 1200      # MQ-2 warm-up time in seconds (20 min)
+  
+  thresholds:
+    temperature:
+      warning: 28.0       # °C
+      critical: 32.0      # °C
+      
+    humidity:
+      warning: 55.0       # %RH
+      critical: 65.0      # %RH
+      
+    lpg_gas:
+      warning: 100.0      # ppm
+      critical: 200.0     # ppm
+      
+    smoke:
+      warning: 80.0       # ppm
+      critical: 150.0     # ppm
+      
+    water_leak:
+      critical: true      # Any detection = critical
+
+logging:
+  level: INFO
+  file: /var/log/dc-guardian/sensor.log
+  max_size_mb: 100
+  rotate_count: 5
+
+telemetry:
+  enabled: true
+  endpoint: ""            # Set to your monitoring server URL
+  # Example: "http://monitoring.internal:9090/metrics"
+  format: prometheus      # prometheus | json | influxdb
+  labels:
+    site: "primary-dc"
+    rack: "auto-detect"   # Override with specific rack ID

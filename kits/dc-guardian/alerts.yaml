@@ -1,0 +1,167 @@
+# DC Guardian — Alert Configuration
+#
+# Alert thresholds and escalation rules for data center monitoring.
+# Customize to your facility's requirements.
+
+alerts:
+  # ── Temperature Alerts ──────────────────────────────────────
+  
+  - name: "High Temperature Warning"
+    sensor: dht22_hot
+    metric: temperature_c
+    operator: ">"
+    threshold: 28.0
+    severity: warning
+    message: "🌡️ Hot aisle temperature above 28°C: {value}°C"
+    cooldown: 300  # Don't re-alert for 5 minutes
+    
+  - name: "Critical Temperature"
+    sensor: dht22_hot
+    metric: temperature_c
+    operator: ">"
+    threshold: 32.0
+    severity: critical
+    message: "🔥 CRITICAL: Hot aisle temperature {value}°C exceeds 32°C threshold!"
+    cooldown: 60
+
+  - name: "Cold Aisle Temperature Warning"
+    sensor: dht22_cold
+    metric: temperature_c
+    operator: ">"
+    threshold: 25.0
+    severity: warning
+    message: "🌡️ Cold aisle temperature above 25°C: {value}°C"
+    cooldown: 300
+
+  # ── Humidity Alerts ─────────────────────────────────────────
+
+  - name: "High Humidity Warning"
+    sensor: dht22_hot
+    metric: humidity
+    operator: ">"
+    threshold: 55.0
+    severity: warning
+    message: "💧 Humidity above 55%: {value}% — risk of condensation"
+    cooldown: 300
+
+  - name: "Critical Humidity"
+    sensor: dht22_hot
+    metric: humidity
+    operator: ">"
+    threshold: 65.0
+    severity: critical
+    message: "💧 CRITICAL: Humidity {value}% — condensation risk to equipment!"
+    cooldown: 60
+
+  # ── Smoke / Gas Alerts ──────────────────────────────────────
+
+  - name: "Smoke Warning (CRAC)"
+    sensor: mq2_crac
+    metric: smoke_ppm
+    operator: ">"
+    threshold: 80.0
+    severity: warning
+    message: "💨 Smoke detected near CRAC unit: {value} ppm"
+    cooldown: 60
+
+  - name: "Critical Smoke (CRAC)"
+    sensor: mq2_crac
+    metric: smoke_ppm
+    operator: ">"
+    threshold: 150.0
+    severity: critical
+    message: "🔥 CRITICAL: Heavy smoke near CRAC unit: {value} ppm — possible fire!"
+    cooldown: 0  # Alert immediately every time
+
+  - name: "Smoke Warning (Cable Tray)"
+    sensor: mq2_cable
+    metric: smoke_ppm
+    operator: ">"
+    threshold: 80.0
+    severity: warning
+    message: "💨 Smoke detected near cable trays: {value} ppm"
+    cooldown: 60
+
+  - name: "Critical Smoke (Cable Tray)"
+    sensor: mq2_cable
+    metric: smoke_ppm
+    operator: ">"
+    threshold: 150.0
+    severity: critical
+    message: "🔥 CRITICAL: Smoke in cable tray area: {value} ppm — possible fire!"
+    cooldown: 0
+
+  # ── Water Leak Alerts ───────────────────────────────────────
+
+  - name: "Water Leak (Raised Floor)"
+    sensor: water_floor
+    metric: water_detected
+    operator: "=="
+    threshold: true
+    severity: critical
+    message: "💧 CRITICAL: Water detected under raised floor! Immediate inspection required."
+    cooldown: 30
+
+  - name: "Water Leak (Cooling Pipes)"
+    sensor: water_pipe
+    metric: water_detected
+    operator: "=="
+    threshold: true
+    severity: critical
+    message: "💧 CRITICAL: Water leak near cooling pipes! Possible pipe burst."
+    cooldown: 30
+
+# ── Escalation Rules ───────────────────────────────────────────
+
+escalation:
+  - severity: warning
+    actions:
+      - type: log
+      - type: webhook
+        url: ""                    # Set your Slack/Discord webhook URL
+        method: POST
+        payload_template: |
+          {
+            "text": "[DC-GUARDIAN] {alert_name}: {message}",
+            "severity": "{severity}",
+            "sensor": "{sensor}",
+            "value": "{value}",
+            "timestamp": "{timestamp}"
+          }
+    repeat_interval: 1800  # Re-notify every 30 min if still active
+
+  - severity: critical
+    actions:
+      - type: log
+      - type: webhook
+        url: ""                    # Slack/Discord webhook
+      - type: sms
+        provider: twilio           # or vonage, aws-sns
+        to: []                     # Phone numbers for on-call staff
+        message_template: |
+          [DC-GUARDIAN CRITICAL] {message} Sensor: {sensor}, Value: {value}
+      - type: pagerduty
+        routing_key: ""            # Your PagerDuty integration key
+        severity: high
+    repeat_interval: 300   # Re-notify every 5 min if still active
+
+  - severity: critical
+    condition: "duration > 300"    # Sustained critical for 5+ minutes
+    actions:
+      - type: auto_ticket
+        system: jira               # or servicenow, pagerduty
+        project: "DCOPS"
+        issue_type: "Incident"
+        priority: "P1"
+        title_template: "[AUTO] {alert_name} — {sensor}"
+        description_template: |
+          Automated alert from DC Guardian monitoring kit.
+          
+          Alert: {alert_name}
+          Sensor: {sensor}
+          Current Value: {value}
+          Threshold: {threshold}
+          Duration: {duration}s
+          First Detected: {first_triggered}
+          
+          Immediate action required.

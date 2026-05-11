@@ -14,7 +14,7 @@ Clawland Kits provides **ready-to-build hardware recipes** that pair Claw agents
 
 | Kit | Sensors | Board | Total Cost | Replaces |
 |-----|---------|-------|-----------|----------|
-| **DC Guardian** | DHT22 + Smoke + Water | LicheeRV-Nano | ~$88 | $48K/yr datacenter night shift |
+| [**DC Guardian**](kits/dc-guardian/) | DHT22 + Smoke + Water | LicheeRV-Nano | ~$88 | $48K/yr datacenter night shift |
 | **Aqua Watch** | pH + DO + Temp + Turbidity | LicheeRV-Nano | ~$133 | $30K/yr fish pond patrol |
 | **Green Thumb** | Soil + Temp/Humidity + Light + CO2 | LicheeRV-Nano | ~$95 | $18K/yr greenhouse attendant |
 | **Cold Chain** | DS18B20 + GPS + 4G | ESP32-S3 + PicClaw | ~$62 | $12K/yr cold chain inspector |

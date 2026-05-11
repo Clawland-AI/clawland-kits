@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520">
+  <rect width="900" height="520" fill="#f8fafc"/>
+  <rect x="330" y="120" width="240" height="260" rx="20" fill="#0f172a"/>
+  <text x="450" y="170" fill="white" text-anchor="middle" font-size="24" font-family="Arial">PicClaw Board</text>
+  <text x="450" y="205" fill="#93c5fd" text-anchor="middle" font-size="16" font-family="Arial">LicheeRV Nano</text>
+  <g font-family="Arial" font-size="15" fill="#0f172a">
+    <rect x="60" y="70" width="190" height="70" rx="10" fill="#dbeafe"/><text x="155" y="112" text-anchor="middle">DHT22 Room GPIO17</text>
+    <rect x="60" y="170" width="190" height="70" rx="10" fill="#dbeafe"/><text x="155" y="212" text-anchor="middle">DHT22 HVAC GPIO18</text>
+    <rect x="60" y="270" width="190" height="70" rx="10" fill="#dcfce7"/><text x="155" y="312" text-anchor="middle">Leak Probe GPIO20</text>
+    <rect x="650" y="70" width="190" height="70" rx="10" fill="#fee2e2"/><text x="745" y="112" text-anchor="middle">MQ-2 GPIO21</text>
+    <rect x="650" y="170" width="190" height="70" rx="10" fill="#fef3c7"/><text x="745" y="212" text-anchor="middle">Door Switches</text>
+    <rect x="650" y="270" width="190" height="70" rx="10" fill="#ede9fe"/><text x="745" y="312" text-anchor="middle">ADS1115 + SCT-013</text>
+  </g>
+  <g stroke="#334155" stroke-width="3" fill="none">
+    <path d="M250 105 C290 110 300 150 330 160"/>
+    <path d="M250 205 C290 205 300 210 330 220"/>
+    <path d="M250 305 C300 305 300 280 330 280"/>
+    <path d="M650 105 C610 110 600 150 570 160"/>
+    <path d="M650 205 C610 205 600 220 570 230"/>
+    <path d="M650 305 C610 305 600 290 570 290"/>
+  </g>
+  <text x="450" y="455" fill="#475569" text-anchor="middle" font-family="Arial" font-size="18">DC Guardian sensor wiring overview</text>
+</svg>

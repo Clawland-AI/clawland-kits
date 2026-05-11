@@ -1,0 +1,67 @@
+name: dc-guardian
+version: 1.0.0
+description: Data center night-shift monitoring kit for PicClaw edge agents.
+agent: picclaw
+
+triggers:
+  - cron: "*/1 * * * *"
+    description: Sample environment and safety sensors every minute.
+  - event: sensor.leak
+  - event: sensor.smoke
+  - event: sensor.door
+
+tools:
+  - read_sensor
+  - send_alert
+  - log_data
+  - set_gpio
+
+thresholds:
+  temperature_c:
+    warning_high: 30
+    critical_high: 35
+    warning_low: 15
+  humidity_percent:
+    warning_high: 65
+    critical_high: 75
+  current_amp:
+    warning_high: 16
+  leak:
+    critical_when: true
+  smoke:
+    critical_when: true
+  door_open_seconds:
+    warning: 60
+    critical: 300
+
+actions:
+  on_normal:
+    - log_data: dc_guardian.reading
+    - set_gpio:
+        pin: GPIO26
+        state: high
+    - set_gpio:
+        pin: GPIO25
+        state: low
+  on_warning:
+    - send_alert:
+        severity: warning
+        channels: [telegram, discord, webhook]
+    - set_gpio:
+        pin: GPIO25
+        state: high
+  on_critical:
+    - send_alert:
+        severity: critical
+        channels: [telegram, discord, webhook]
+    - set_gpio:
+        pin: GPIO24
+        state: high
+    - set_gpio:
+        pin: GPIO25
+        state: high
+
+metadata:
+  replaces: "$48K/yr datacenter night shift"
+  kit_cost_usd: 87.59
+  board: LicheeRV Nano

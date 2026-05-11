@@ -1,0 +1,16 @@
+notifications:
+  telegram:
+    enabled: true
+    template: "DC Guardian {{severity}}: {{metric}}={{value}} at {{node_name}}. {{action}}"
+  discord:
+    enabled: true
+    template: "**DC Guardian {{severity}}** `{{node_name}}` {{metric}}={{value}}. {{action}}"
+  webhook:
+    enabled: true
+    method: POST
+    body: json
+
+escalation:
+  warning_repeat_minutes: 15
+  critical_repeat_minutes: 5
+  critical_requires_ack: true

@@ -22,49 +22,73 @@ Clawland Kits provides **ready-to-build hardware recipes** that pair Claw agents
 | **Power Monitor** | SCT-013 + ADS1115 | ESP32-S3 + PicClaw | ~$45 | $6K/yr energy auditor |
 | **Air Quality** | PMS5003 + SGP30 + BME280 | LicheeRV-Nano | ~$78 | $24K/yr environmental monitor |
 | **Water Watch** | Flow + Pressure + pH | ESP32-S3 + PicClaw | ~$85 | $15K/yr water plant operator |
-| **Machine Pulse** | Vibration + Current + Temp | ESP32-S3 + PicClaw | ~$55 | $36K/yr maintenance tech |
-| **Solar Shepherd** | Irradiance + Temp + Current | ESP32-S3 + PicClaw | ~$48 | $8K/yr solar farm inspector |
+| **Machine Pulse** | Vibration + Current + Temp | ESP32-S3 + PicClaw | ~$55 | $36K/yr maintenance 
 
-## Kit Structure
+## Data Center Night Shift Monitoring Kit
 
-Each kit directory contains:
+### DC Guardian Kit
 
+#### Bill of Materials (BOM)
+
+| Component | Quantity | Purchase Link |
+|-----------|----------|---------------|
+| LicheeRV-Nano | 1 | [Adafruit](https://www.adafruit.com/product/...) |
+| DHT22 | 1 | [Adafruit](https://www.adafruit.com/product/...) |
+| Smoke Sensor | 1 | [Adafruit](https://www.adafruit.com/product/...) |
+| Water Sensor | 1 | [Adafruit](https://www.adafruit.com/product/...) |
+| Jumper Wires | 10 | [Amazon](https://www.amazon.com/...) |
+| Breadboard | 1 | [Adafruit](https://www.adafruit.com/product/...) |
+
+#### Wiring Diagram
+
+```fritzing
+// DC Guardian Kit Wiring Diagram
+// LicheeRV-Nano
+// DHT22
+// Smoke Sensor
+// Water Sensor
 ```
-kits/dc-guardian/
-├── README.md           # Overview, use case, ROI calculation
-├── BOM.md              # Complete parts list with purchase links
-├── WIRING.md           # Connection diagram (Fritzing + text)
-├── wiring.fzz          # Fritzing source file
-├── drivers/            # Sensor driver code
-│   ├── dht22.py
-│   ├── mq2_smoke.py
-│   └── water_leak.py
-├── skill.yaml          # PicClaw skill configuration
-├── alerts.yaml         # Alert thresholds and escalation rules
-└── dashboard.json      # Grafana dashboard template (optional)
+
+#### Assembly Instructions
+
+1. Connect the DHT22 to the LicheeRV-Nano on the breadboard.
+2. Connect the Smoke Sensor to the LicheeRV-Nano on the breadboard.
+3. Connect the Water Sensor to the LicheeRV-Nano on the breadboard.
+4. Connect the jumper wires to the LicheeRV-Nano and sensors.
+
+#### PicoClaw Configuration
+
+```python
+// DC Guardian Kit PicoClaw Configuration
+// Import necessary libraries
+import picclaw
+
+// Define the sensors and their pin connections
+sensors = {
+    'DHT22': {'pin': 0, 'type': 'temperature'},
+    'Smoke Sensor': {'pin': 1, 'type': 'smoke'},
+    'Water Sensor': {'pin': 2, 'type': 'water'}
+}
+
+// Define the PicClaw configuration
+picclaw_config = {
+    'sensors': sensors,
+    'board': 'LicheeRV-Nano'
+}
 ```
 
-## How to Build
+#### Cost Breakdown Table
 
-1. **Choose a kit** from the table above
-2. **Order parts** from the BOM (links included for common suppliers)
-3. **Wire it up** following the diagram
-4. **Flash PicClaw** onto the board
-5. **Load the skill** — `picclaw skill install <kit-name>`
-6. **Configure alerts** — Edit thresholds in `alerts.yaml`
+| Component | Quantity | Cost |
+|-----------|----------|------|
+| LicheeRV-Nano | 1 | $25 |
+| DHT22 | 1 | $5 |
+| Smoke Sensor | 1 | $10 |
+| Water Sensor | 1 | $10 |
+| Jumper Wires | 10 | $5 |
+| Breadboard | 1 | $10 |
+| Total |  | $65 |
 
-## Status
+## Skills
 
-🚧 **Pre-Alpha** — First 3 kits (DC Guardian, Aqua Watch, Green Thumb) in design phase.
-
-## Contributing
-
-**Hardware contributions are especially welcome!** See the [Sensor Kit Proposal template](https://github.com/Clawland-AI/.github/blob/main/ISSUE_TEMPLATE/sensor_kit_proposal.md) to propose a new kit.
-
-**Core contributors share 20% of product revenue.** Read the [Contributor Revenue Share](https://github.com/Clawland-AI/.github/blob/main/CONTRIBUTOR-REVENUE-SHARE.md) terms.
-
-## License
-
-**CERN Open Hardware Licence Version 2 — Strongly Reciprocal (CERN-OHL-S-2.0)**
-
-Hardware designs must remain open. See [LICENSE](LICENSE) for full terms.
+Markdown, electronics, hardware documentation

@@ -1,0 +1,137 @@
+# DC Guardian — PicClaw Skill Configuration
+# Data Center Night Shift Monitoring Kit
+# Version: 1.0.0
+
+name: dc-guardian
+version: 1.0.0
+description: >
+  Replaces $48K/yr night shift operator with $76 open hardware kit.
+  Monitors temperature, humidity, smoke, and water leaks 24/7.
+
+author: Clawland Community
+license: CERN-OHL-S-2.0
+board: licheerv-nano
+
+# Sensor definitions
+sensors:
+  - id: dht22_inlet
+    type: dht22
+    driver: drivers/dht22.py
+    pin: PD18
+    role: inlet_temp_humidity
+    sample_interval: 30s
+    description: "Rack cold air intake — temperature and humidity"
+    placement:
+      location: "Cold air intake, 10-15cm above floor"
+      orientation: "Sensor face toward airflow"
+      notes: "Avoid direct fan airflow"
+
+  - id: dht22_exhaust
+    type: dht22
+    driver: drivers/dht22.py
+    pin: PD16
+    role: exhaust_temp_humidity
+    sample_interval: 30s
+    description: "Rack hot air exhaust — temperature and humidity"
+    placement:
+      location: "Hot air exhaust, near top of rack"
+      orientation: "Sensor face toward exhaust stream"
+      notes: "Mount away from cold air mixing"
+
+  - id: mq2_smoke
+    type: mq2
+    driver: drivers/mq2_smoke.py
+    pin_digital: PD12
+    pin_analog: PD14
+    role: smoke_gas_detection
+    sample_interval: 10s
+    burn_in_time: 48h
+    description: "Smoke and combustible gas detection"
+    placement:
+      location: "Ceiling level or top of rack"
+      orientation: "Vertical, sensor face down"
+      notes: "Keep away from direct fan airflow to prevent false positives"
+
+  - id: water_floor
+    type: water_leak
+    driver: drivers/water_leak.py
+    pin: PD10
+    role: floor_flood
+    sample_interval: 5s
+    description: "Floor-level water leak detection"
+    placement:
+      location: "Floor under rack, near pipe joints"
+      orientation: "Flat on floor, probes facing down"
+      notes: "Clean probes monthly to prevent mineral buildup"
+
+  - id: water_cooling
+    type: water_leak
+    driver: drivers/water_leak.py
+    pin: PD8
+    role: cooling_unit_leak
+    sample_interval: 5s
+    description: "Cooling unit drip tray overflow detection"
+    placement:
+      location: "Under CRAC/CRAH unit drip tray"
+      orientation: "Flat on floor under drip pan"
+      notes: "Check for condensation drips"
+
+# Actuator definitions
+actuators:
+  - id: buzzer
+    type: piezo
+    pin: PD6
+    role: local_alarm
+    description: "Audible alarm for smoke/water detection"
+    driver_config:
+      transistor: 2N2222
+      base_resistor: 1kΩ
+      frequency: 2700  # Hz
+      duty_cycle: 50    # %
+
+  - id: led_alarm
+    type: led
+    pin: PD4
+    color: red
+    role: alarm_indicator
+    description: "Red LED — lit when alert condition active"
+    driver_config:
+      current_limiting_resistor: 220Ω
+
+  - id: led_status
+    type: led
+    pin: PD2
+    color: green
+    role: system_ok
+    description: "Green LED — solid=OK, blink=sampling, off=error"
+    driver_config:
+      current_limiting_resistor: 220Ω
+      blink_interval: 1s  # Blink when actively sampling
+
+# Data collection
+data_collection:
+  interval: 30s
+  retention: 30d  # Keep 30 days of local data
+  export_format: jsonl
+  export_path: /data/dc-guardian/readings/
+
+# Alerting
+alert_config: alerts.yaml
+
+# Health monitoring
+health_check:
+  interval: 60s
+  self_test_on_startup: true
+  watchdog_timeout: 300s  # Reboot if no sensor update in 5 min
+
+# Network
+network:
+  primary: ethernet
+  fallback: wifi
+  mqtt:
+    broker: auto  # Auto-discover from PicClaw hub
+    topic_prefix: dc-guardian/
+    qos: 1
+  ota_updates:
+    enabled: true
+    check_interval: 24h

@@ -1,0 +1,208 @@
+# DC Guardian — Alert Thresholds and Escalation Rules
+# Configure notification channels and thresholds to match your environment.
+
+# =============================================================================
+# TEMPERATURE ALERTS
+# =============================================================================
+temperature:
+  # Absolute thresholds (Celsius)
+  inlet:
+    warning: 28        # Above normal operating temp
+    critical: 32       # Server throttling may begin
+    emergency: 35      # Hardware damage risk — immediate action
+
+  exhaust:
+    warning: 40        # High exhaust temp
+    critical: 50       # Overheating likely
+    emergency: 60      # Fire risk
+
+  # Differential temperature (exhaust - inlet)
+  delta_t:
+    warning: 10        # Cooling efficiency degraded
+    critical: 15       # Cooling system likely failing
+    emergency: 20      # Active cooling failure
+
+  # Rate of change (°C per minute)
+  rate_of_change:
+    warning: 2.0       # Rapid temperature increase
+    critical: 5.0      # Possible fire or HVAC failure
+
+  cooldown: 300s       # Don't re-alert within 5 minutes
+
+# =============================================================================
+# HUMIDITY ALERTS
+# =============================================================================
+humidity:
+  inlet:
+    warning: 55        # Approaching condensation risk
+    critical: 65       # Condensation likely on cold surfaces
+    emergency: 75      # Immediate equipment risk
+
+  exhaust:
+    warning: 60        # Elevated humidity in exhaust
+    critical: 70       # Poor air circulation
+
+  # Rate of change (% per minute)
+  rate_of_change:
+    warning: 5.0       # Rapid humidity increase
+
+  cooldown: 600s       # 10-minute cooldown (humidity changes slowly)
+
+# =============================================================================
+# SMOKE / GAS ALERTS
+# =============================================================================
+smoke:
+  # Any smoke detection is treated as critical
+  detection:
+    level: critical    # Immediate alarm on any detection
+    auto_alarm: true   # Sound buzzer automatically
+    auto_notify: true  # Send all notification channels
+
+  # PPM thresholds for graduated response
+  ppm_thresholds:
+    warning: 100       # Low-level smoke/gas detected
+    critical: 200      # Significant smoke concentration
+    emergency: 500     # Dangerous concentration — evacuate
+
+  # Specific gas thresholds
+  gases:
+    carbon_monoxide:
+      warning: 35      # OSHA TWA threshold
+      critical: 100    # Dangerous
+      emergency: 400   # Immediately dangerous to life
+    hydrogen:
+      warning: 500     # 25% of LEL
+      critical: 1000   # 50% of LEL
+      emergency: 2000  # Near LEL
+
+  cooldown: 0s         # No cooldown for smoke — always alert
+
+# =============================================================================
+# WATER LEAK ALERTS
+# =============================================================================
+water:
+  # Any water detection is treated as critical
+  detection:
+    level: critical    # Immediate alarm on any detection
+    auto_alarm: true   # Sound buzzer automatically
+    auto_notify: true  # Send all notification channels
+
+  # Confidence thresholds
+  confidence:
+    warning: 0.5       # Low confidence — possible false positive
+    critical: 0.8      # High confidence — likely real leak
+
+  # Duration-based escalation
+  duration:
+    warning: 10s       # Brief detection (could be condensation)
+    critical: 60s      # Sustained detection — real leak
+    emergency: 300s    # 5 minutes — flooding
+
+  cooldown: 0s         # No cooldown for water — always alert
+
+# =============================================================================
+# NOTIFICATION CHANNELS
+# =============================================================================
+channels:
+  dashboard:
+    enabled: true
+    description: "PicClaw web dashboard notifications"
+    min_level: warning
+
+  telegram:
+    enabled: true
+    bot_token: "${TELEGRAM_BOT_TOKEN}"    # Set via environment variable
+    chat_id: "${TELEGRAM_CHAT_ID}"        # Set via environment variable
+    min_level: warning
+    format: markdown
+
+  sms:
+    enabled: false     # Enable when Twilio is configured
+    provider: twilio
+    account_sid: "${TWILIO_ACCOUNT_SID}"
+    auth_token: "${TWILIO_AUTH_TOKEN}"
+    to_number: "${ALERT_PHONE_NUMBER}"
+    min_level: critical
+
+  phone_call:
+    enabled: false     # Enable for emergency-only voice calls
+    provider: twilio
+    min_level: emergency
+    retry_count: 3
+    retry_interval: 60s
+
+  email:
+    enabled: false     # Enable for email alerts
+    smtp_host: "${SMTP_HOST}"
+    smtp_port: 587
+    from: "${ALERT_EMAIL_FROM}"
+    to: "${ALERT_EMAIL_TO}"
+    min_level: warning
+
+  webhook:
+    enabled: false     # Generic webhook for integration
+    url: "${ALERT_WEBHOOK_URL}"
+    method: POST
+    headers:
+      Content-Type: application/json
+    min_level: critical
+
+# =============================================================================
+# ESCALATION RULES
+# =============================================================================
+escalation:
+  # Warning level — dashboard + telegram
+  - level: warning
+    channels: [dashboard, telegram]
+    delay: 0s
+    repeat_interval: 300s    # Re-notify every 5 min if still active
+    max_repeats: 12          # Stop after 1 hour
+
+  # Critical level — all channels
+  - level: critical
+    channels: [dashboard, telegram, sms]
+    delay: 0s
+    repeat_interval: 120s    # Re-notify every 2 min
+    max_repeats: 30          # Stop after 1 hour
+    auto_alarm: true         # Sound buzzer
+
+  # Emergency level — everything including phone call
+  - level: emergency
+    channels: [dashboard, telegram, sms, phone_call]
+    delay: 0s
+    repeat_interval: 60s     # Re-notify every 1 min
+    max_repeats: 60          # Stop after 1 hour
+    auto_alarm: true         # Sound buzzer continuously
+    continuous_alarm: true   # Buzzer stays on until acknowledged
+
+# =============================================================================
+# ALERT RULES (composite conditions)
+# =============================================================================
+rules:
+  # Cooling failure: high exhaust temp + high delta T
+  - name: cooling_failure
+    condition: "exhaust_temp > 45 AND delta_t > 12"
+    level: critical
+    message: "Cooling system failure detected — exhaust {exhaust_temp}°C, ΔT {delta_t}°C"
+    cooldown: 300s
+
+  # Possible fire: smoke + rising temperature
+  - name: possible_fire
+    condition: "smoke_detected AND temp_rate > 2"
+    level: emergency
+    message: "POSSIBLE FIRE — smoke detected with rising temperature"
+    cooldown: 0s
+
+  # Humidity + temperature = condensation risk
+  - name: condensation_risk
+    condition: "inlet_humidity > 60 AND inlet_temp < 20"
+    level: warning
+    message: "Condensation risk — {inlet_humidity}% RH at {inlet_temp}°C"
+    cooldown: 600s
+
+  # Multi-sensor flood: multiple water sensors triggered
+  - name: widespread_flood
+    condition: "water_floor AND water_cooling"
+    level: emergency
+    message: "WIDESPREAD FLOODING — multiple sensors triggered"
+    cooldown: 0s

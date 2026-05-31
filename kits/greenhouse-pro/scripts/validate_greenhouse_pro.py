@@ -10,6 +10,8 @@ REQUIRED_FILES = [
     "skill.yaml",
     "alerts.yaml",
     "test-report.md",
+    "hardware/README.md",
+    "hardware/greenhouse-pro.kicad_sch",
     "enclosure/greenhouse-pro-enclosure.scad",
     "drivers/soil_moisture.py",
     "drivers/bme280_reader.py",
@@ -33,6 +35,7 @@ REQUIRED_DOC_TERMS = [
     "Bill of Materials",
     "ASCII Wiring Diagram",
     "3D-printable",
+    "KiCad",
     "Sample Readings",
 ]
 
@@ -63,4 +66,3 @@ for term in REQUIRED_DOC_TERMS:
         fail(f"documentation missing {term}")
 
 print("greenhouse-pro validation ok")
-

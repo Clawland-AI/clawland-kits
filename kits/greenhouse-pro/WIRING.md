@@ -45,6 +45,14 @@ All sensor wiring is low-voltage. Keep fan and pump mains wiring outside the con
                     +----------------------+
 ```
 
+## KiCad Schematic
+
+The reviewable KiCad source lives at `hardware/greenhouse-pro.kicad_sch`.
+It mirrors this wiring guide with one connector block for the PicClaw edge
+board, one shared I2C bus for BME280/BH1750/SCD41, analog inputs for both soil
+probes, a pulled-up 1-Wire DS18B20 line, and isolated relay-control outputs for
+the fan and irrigation pump.
+
 ## Assembly Steps
 
 1. Mount the controller board inside the enclosure using nylon standoffs.
@@ -68,4 +76,3 @@ All sensor wiring is low-voltage. Keep fan and pump mains wiring outside the con
 - Soil dry calibration is higher than wet calibration for the selected ADC wiring.
 - Relay LEDs toggle without load before connecting fan or pump.
 - First report contains all expected fields from `skill.yaml`.
-

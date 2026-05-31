@@ -1,0 +1,124 @@
+name: greenhouse-pro
+version: 1.0.0
+description: Greenhouse climate, soil, light, and CO2 monitoring kit for PicClaw.
+board: picclaw-compatible
+poll_interval_seconds: 60
+
+sensors:
+  air_climate:
+    driver: drivers/bme280_reader.py
+    bus: i2c
+    address: 0x76
+    fields:
+      - air_temperature_c
+      - relative_humidity_pct
+      - pressure_hpa
+  light:
+    driver: drivers/bh1750_reader.py
+    bus: i2c
+    address: 0x23
+    fields:
+      - light_lux
+  co2:
+    driver: drivers/scd41_reader.py
+    bus: i2c
+    address: 0x62
+    fields:
+      - co2_ppm
+      - co2_temperature_c
+      - co2_humidity_pct
+  soil_bed_a:
+    driver: drivers/soil_moisture.py
+    pin: ADC0
+    dry_adc: 2940
+    wet_adc: 1210
+    fields:
+      - soil_moisture_pct
+  soil_bed_b:
+    driver: drivers/soil_moisture.py
+    pin: ADC1
+    dry_adc: 2925
+    wet_adc: 1185
+    fields:
+      - soil_moisture_pct
+  leaf_temperature:
+    driver: drivers/ds18b20_leaf.py
+    pin: GPIO16
+    fields:
+      - leaf_temperature_c
+
+actuators:
+  fan:
+    type: relay
+    pin: GPIO17
+    default_state: off
+  irrigation_pump:
+    type: relay
+    pin: GPIO18
+    default_state: off
+
+rules:
+  - id: high_canopy_temperature
+    when: air_temperature_c >= 32
+    severity: warning
+    actions:
+      - fan.on
+      - notify.greenhouse_operator
+  - id: critical_heat_stress
+    when: air_temperature_c >= 36 or leaf_temperature_c >= 34
+    severity: critical
+    actions:
+      - fan.on
+      - irrigation_pump.off
+      - notify.greenhouse_operator
+      - notify.escalation_webhook
+  - id: low_soil_moisture
+    when: soil_bed_a.soil_moisture_pct <= 28 and soil_bed_b.soil_moisture_pct <= 28
+    severity: warning
+    guardrails:
+      - relative_humidity_pct < 92
+      - irrigation_pump.cooldown_minutes >= 30
+    actions:
+      - irrigation_pump.pulse_30_seconds
+      - notify.greenhouse_operator
+  - id: overwatering_risk
+    when: soil_bed_a.soil_moisture_pct >= 82 or soil_bed_b.soil_moisture_pct >= 82
+    severity: warning
+    actions:
+      - irrigation_pump.off
+      - notify.greenhouse_operator
+  - id: ventilation_needed
+    when: co2_ppm >= 1500 or relative_humidity_pct >= 88
+    severity: warning
+    actions:
+      - fan.on
+  - id: light_deficit
+    when: daily_light_integral_estimate < 12
+    severity: info
+    actions:
+      - notify.daily_report
+
+reports:
+  daily:
+    time_local: "18:00"
+    include:
+      - min_air_temperature_c
+      - max_air_temperature_c
+      - avg_relative_humidity_pct
+      - avg_co2_ppm
+      - min_soil_moisture_pct
+      - light_hours_above_threshold
+      - rule_excursion_counts
+    outputs:
+      - type: markdown
+        path: reports/greenhouse-daily.md
+      - type: csv
+        path: reports/greenhouse-daily.csv
+
+memory:
+  enabled: true
+  trend_keys:
+    - greenhouse.air_temperature_c.daily_max
+    - greenhouse.soil_moisture_pct.daily_min
+    - greenhouse.co2_ppm.daily_avg
+    - greenhouse.light_lux.light_hours

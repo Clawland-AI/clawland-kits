@@ -1,0 +1,36 @@
+channels:
+  greenhouse_operator:
+    type: webhook
+    url_env: GREENHOUSE_ALERT_WEBHOOK
+  escalation_webhook:
+    type: webhook
+    url_env: GREENHOUSE_ESCALATION_WEBHOOK
+  daily_report:
+    type: file
+    path: reports/greenhouse-daily.md
+
+thresholds:
+  air_temperature_c:
+    low_warning: 14
+    high_warning: 32
+    high_critical: 36
+  relative_humidity_pct:
+    low_warning: 42
+    high_warning: 88
+    high_critical: 94
+  co2_ppm:
+    low_info: 450
+    high_warning: 1500
+    high_critical: 2200
+  soil_moisture_pct:
+    low_warning: 28
+    low_critical: 18
+    high_warning: 82
+  light_lux:
+    active_light_threshold: 12000
+
+cooldowns:
+  warning_minutes: 30
+  critical_minutes: 5
+  pump_minutes: 30
+

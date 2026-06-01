@@ -23,6 +23,7 @@ Target replacement value from the Clawland bounty board:
 - Alert and escalation thresholds in `alerts.yaml`.
 - Sensor driver stubs in `drivers/`.
 - 3D-printable enclosure source in `enclosure/greenhouse-pro-enclosure.scad`.
+- Grafana dashboard template in `dashboard.json`.
 - Test and calibration report in `test-report.md`.
 - Dependency-free validator in `scripts/validate_greenhouse_pro.py`.
 
@@ -52,15 +53,16 @@ The PicClaw node samples every 60 seconds, publishes telemetry to the Clawland e
 2. Wire the kit using `WIRING.md`.
 3. Review the KiCad schematic in `hardware/greenhouse-pro.kicad_sch`.
 4. Print the enclosure from `enclosure/greenhouse-pro-enclosure.scad`.
-5. Copy `skill.yaml` and `alerts.yaml` to the PicClaw skill directory.
-6. Flash the driver scripts from `drivers/` onto the node.
-7. Run the validation script:
+5. Import `dashboard.json` into Grafana if the site exports Prometheus-style telemetry.
+6. Copy `skill.yaml` and `alerts.yaml` to the PicClaw skill directory.
+7. Flash the driver scripts from `drivers/` onto the node.
+8. Run the validation script:
 
 ```bash
 python kits/greenhouse-pro/scripts/validate_greenhouse_pro.py
 ```
 
-8. Calibrate the soil probe using the dry and saturated readings in `test-report.md`.
+9. Calibrate the soil probe using the dry and saturated readings in `test-report.md`.
 
 ## Safety Notes
 

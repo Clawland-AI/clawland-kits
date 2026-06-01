@@ -13,6 +13,7 @@ REQUIRED_FILES = [
     "hardware/README.md",
     "hardware/greenhouse-pro.kicad_sch",
     "enclosure/greenhouse-pro-enclosure.scad",
+    "dashboard.json",
     "drivers/soil_moisture.py",
     "drivers/bme280_reader.py",
     "drivers/bh1750_reader.py",
@@ -36,6 +37,7 @@ REQUIRED_DOC_TERMS = [
     "ASCII Wiring Diagram",
     "3D-printable",
     "KiCad",
+    "Grafana",
     "Sample Readings",
 ]
 

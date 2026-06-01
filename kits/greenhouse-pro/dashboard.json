@@ -1,0 +1,185 @@
+{
+  "title": "Greenhouse Pro Telemetry",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "tags": [
+    "clawland",
+    "greenhouse-pro",
+    "picclaw"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "node",
+        "type": "textbox",
+        "label": "Node ID",
+        "query": "greenhouse-pro-01",
+        "current": {
+          "text": "greenhouse-pro-01",
+          "value": "greenhouse-pro-01"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Air Temperature And Humidity",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "greenhouse_air_temperature_c{node=\"$node\"}",
+          "legendFormat": "temperature C"
+        },
+        {
+          "refId": "B",
+          "expr": "greenhouse_air_humidity_pct{node=\"$node\"}",
+          "legendFormat": "humidity %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Soil Moisture And Irrigation State",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "greenhouse_soil_moisture_pct{node=\"$node\"}",
+          "legendFormat": "soil moisture %"
+        },
+        {
+          "refId": "B",
+          "expr": "greenhouse_irrigation_pump_state{node=\"$node\"}",
+          "legendFormat": "pump state"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Light And CO2",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "greenhouse_light_lux{node=\"$node\"}",
+          "legendFormat": "light lux"
+        },
+        {
+          "refId": "B",
+          "expr": "greenhouse_co2_ppm{node=\"$node\"}",
+          "legendFormat": "CO2 ppm"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Active Alerts",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(greenhouse_alert_active{node=\"$node\"})",
+          "legendFormat": "alerts"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 3
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Sensor Freshness",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "min(greenhouse_sensor_age_seconds{node=\"$node\"})",
+          "legendFormat": "freshest sensor age"
+        },
+        {
+          "refId": "B",
+          "expr": "max(greenhouse_sensor_age_seconds{node=\"$node\"})",
+          "legendFormat": "oldest sensor age"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      }
+    }
+  ]
+}

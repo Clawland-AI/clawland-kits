@@ -1,0 +1,92 @@
+kit: dc-guardian-night-shift
+timezone: local
+
+routes:
+  night_shift_ops:
+    description: Low urgency trend notifications for the remote operator queue.
+    repeat_after_minutes: 30
+  facilities_on_call:
+    description: Critical data center escalation path.
+    repeat_after_minutes: 5
+
+rules:
+  - id: hot_aisle_temperature_warning
+    sensor: hot_aisle_climate
+    field: temperature_c
+    condition: ">="
+    value: 30
+    duration_seconds: 120
+    severity: warning
+    route: night_shift_ops
+
+  - id: hot_aisle_temperature_critical
+    sensor: hot_aisle_climate
+    field: temperature_c
+    condition: ">="
+    value: 35
+    duration_seconds: 30
+    severity: critical
+    route: facilities_on_call
+
+  - id: humidity_low_warning
+    sensor: hot_aisle_climate
+    field: relative_humidity_pct
+    condition: "<="
+    value: 25
+    duration_seconds: 300
+    severity: warning
+    route: night_shift_ops
+
+  - id: humidity_high_warning
+    sensor: hot_aisle_climate
+    field: relative_humidity_pct
+    condition: ">="
+    value: 60
+    duration_seconds: 300
+    severity: warning
+    route: night_shift_ops
+
+  - id: humidity_high_critical
+    sensor: hot_aisle_climate
+    field: relative_humidity_pct
+    condition: ">="
+    value: 70
+    duration_seconds: 120
+    severity: critical
+    route: facilities_on_call
+
+  - id: smoke_gas_trend_warning
+    sensor: smoke_gas_trend
+    field: ratio_over_baseline
+    condition: ">="
+    value: 1.35
+    duration_seconds: 90
+    severity: warning
+    route: night_shift_ops
+
+  - id: smoke_gas_trend_critical
+    sensor: smoke_gas_trend
+    field: ratio_over_baseline
+    condition: ">="
+    value: 1.8
+    duration_seconds: 30
+    severity: critical
+    route: facilities_on_call
+
+  - id: water_leak_critical
+    sensor: water_leak
+    field: active
+    condition: "=="
+    value: true
+    duration_seconds: 0
+    severity: critical
+    route: facilities_on_call
+
+  - id: kit_offline_critical
+    sensor: picclaw_heartbeat
+    field: age_seconds
+    condition: ">="
+    value: 120
+    duration_seconds: 0
+    severity: critical
+    route: facilities_on_call

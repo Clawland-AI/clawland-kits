@@ -1,0 +1,85 @@
+name: dc-guardian-night-shift
+display_name: DC Guardian Night Shift
+version: 0.1.0
+runtime: picclaw
+scenario: data_center_monitoring
+description: >
+  Rack-side data center monitoring kit for temperature, humidity, smoke/gas
+  trend, water leak, and heartbeat escalation.
+
+board:
+  model: sipeed-licheerv-nano-we
+  network:
+    primary: ethernet
+    backup: wifi
+  location: rack_hot_aisle
+
+sampling:
+  interval_seconds: 5
+  publish_interval_seconds: 15
+  heartbeat_timeout_seconds: 120
+
+sensors:
+  - id: hot_aisle_climate
+    type: dht22
+    pin: GPIO17
+    read_every_seconds: 10
+    fields:
+      temperature_c:
+        warn_high: 30
+        critical_high: 35
+      relative_humidity_pct:
+        warn_low: 25
+        warn_high: 60
+        critical_high: 70
+
+  - id: smoke_gas_trend
+    type: mq2
+    adc:
+      bus: i2c-1
+      address: "0x48"
+      channel: 0
+      gain: 1
+    warmup_seconds: 600
+    baseline:
+      window_seconds: 300
+      min_samples: 40
+    thresholds:
+      warn_ratio_over_baseline: 1.35
+      warn_duration_seconds: 90
+      critical_ratio_over_baseline: 1.8
+      critical_duration_seconds: 30
+
+  - id: water_leak
+    type: digital_water
+    pin: GPIO27
+    active_high: true
+    debounce_ms: 500
+    critical_on_active: true
+
+outputs:
+  telemetry_topic: clawland/kits/dc-guardian/telemetry
+  alert_topic: clawland/kits/dc-guardian/alerts
+  local_log_path: /var/log/picclaw/dc-guardian.jsonl
+
+actions:
+  on_warn:
+    - type: picclaw_alert
+      severity: warning
+      route: night_shift_ops
+  on_critical:
+    - type: picclaw_alert
+      severity: critical
+      route: facilities_on_call
+    - type: webhook
+      name: incident_bridge
+      url_env: DC_GUARDIAN_INCIDENT_WEBHOOK
+
+verification:
+  require_i2c_devices:
+    - bus: i2c-1
+      address: "0x48"
+  require_recent_samples:
+    hot_aisle_climate: 30
+    smoke_gas_trend: 30
+    water_leak: 30

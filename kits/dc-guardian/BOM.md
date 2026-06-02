@@ -10,7 +10,7 @@
 | # | Part / SKU | Qty | Unit Price | Subtotal | Category | Purpose | Verified Link(s) |
 |---|------------|:---:|----------:|---------:|----------|---------|-----------------|
 | 1 | **LicheeRV Nano 512MB** (Sipeed) or equiv. Linux SBC | 1 | $12.90 | $12.90 | Compute | PicClaw edge runtime, sensor polling, alert dispatch | [Sipeed Store](https://wiki.sipeed.com/hardware/en/lichee/RV_Nano/1_intro.html) · [AliExpress ~$13](https://aliexpress.com) |
-| 2 | **USB‑C 5V⎓2A PSU** (Raspberry Pi official or equiv.) | 1 | $6.99 | $6.99 | Power | Stable board power | [Raspberry Pi](https://www.raspberrypi.com/products/type-c-power-supply/) · [Amazon](https://www.amazon.com/dp/B0BTRRC2C6) |
+| 2 | **USB‑C 5V⎓2A PSU** (Raspberry Pi official or equiv.) | 1 | $6.99 | $6.99 | Power | Stable board power | [Raspberry Pi](https://www.raspberrypi.com/products/type-c-power-supply/) · [Amazon](https://www.amazon.com/dp/B07Z8P61DQ) |
 | 3 | **DHT22 / AM2302** temp‑humidity sensor (Aosong) | 2 | $5.50 | $11.00 | Sensor | Room ambient + HVAC cold‑aisle temp/humidity | [Adafruit 385](https://www.adafruit.com/product/385) · [SparkFun SEN‑18396](https://www.sparkfun.com/products/18396) |
 | 4 | **DS18B20** waterproof temperature probe (Dallas / Maxim) | 1 | $4.95 | $4.95 | Sensor | Spot temperature on cooling loop or cable tray hotspot | [Adafruit 381](https://www.adafruit.com/product/381) · [Amazon 10‑pack ~$10](https://www.amazon.com/dp/B08QRWHYMY) |
 | 5 | **Water leak sensor / probe** (digital output) | 1 | $3.50 | $3.50 | Sensor | Floor / cooling‑line leak detection | [DFRobot SEN0368](https://www.dfrobot.com/product-1128.html) · [Adafruit 5190](https://www.adafruit.com/product/5190) |

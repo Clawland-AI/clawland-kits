@@ -21,12 +21,9 @@
 
 | File | Description |
 |------|-------------|
-| [BOM.md](BOM.md) | Full parts list with verified SKUs, pricing tiers, and alternate suppliers |
-| [WIRING.md](WIRING.md) | Pin map, Mermaid wiring diagram, Fritzing‑style breadboard layout |
-| [ASSEMBLY.md](ASSEMBLY.md) | Step‑by‑step build with bench test, calibration, and installation |
-| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Edge‑case diagnostics, common faults, and signal‑integrity guide |
-| [SAFETY.md](SAFETY.md) | Electrical safety, NEC compliance, rack installation best practices |
-| [MAINTENANCE.md](MAINTENANCE.md) | Periodic checks, sensor recalibration schedule, lifecycle planning |
+| [BOM.md](BOM.md) | Full parts list with verified SKUs, pricing, and purchase links |
+| [WIRING.md](WIRING.md) | Pin map, Mermaid wiring diagram, placement rules |
+| [ASSEMBLY.md](ASSEMBLY.md) | Step‑by‑step build instructions and acceptance testing |
 | [skill.yaml](skill.yaml) | PicClaw scenario configuration |
 | [alerts.yaml](alerts.yaml) | Alert thresholds, notification channels, escalation rules |
 | [drivers/](drivers/) | Lightweight sensor readers (DHT22, DS18B20, discrete, SCT‑013) |
@@ -42,8 +39,6 @@
 | Maintenance reserve (annual) | $30.00 |
 | **First‑year net savings** | **$47,883.42** |
 | **Payback period** | **< 1 shift** |
-
-> ROI assumes 24/7 coverage — replacing a single full‑time night‑shift operator with the kit's continuous, always‑alert monitoring.
 
 ---
 
@@ -70,4 +65,4 @@ picclaw gateway
 
 - This kit uses **isolated current sensors only** — no mains‑voltage connections to the board.
 - Have any mains‑clamp installation reviewed by a qualified electrician.
-- Read [SAFETY.md](SAFETY.md) before installing in production.
+- Read the full wiring and assembly guides before installing.

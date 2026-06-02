@@ -2,401 +2,186 @@
 
 > **Estimated build time:** 45–75 minutes (bench) + 30 minutes (rack installation)
 > **Skill level:** Intermediate — basic soldering, crimping, and multimeter use required
+> **Wiring reference:** See [WIRING.md](WIRING.md) for diagrams and pin assignments before starting.
 
 ---
 
 ## 🧰 Tools Required
 
-| Tool | Purpose | Alternative |
-|------|---------|-------------|
-| Wire cutter/stripper (22–26 AWG) | Trimming and stripping sensor wires | Scissors + sandpaper |
-| Small flat‑head screwdriver (#00) | Terminal block screws | Precision set |
-| Digital multimeter | Continuity check, voltage verification, sensor test | Any cheap DMM |
-| Soldering iron (25W+) + solder | Resistor lead soldering, transistor wiring | Breadboard‑compatible alternatives |
-| Heat‑gun or lighter | Heat‑shrink tubing on soldered joints | Electrical tape (temporary) |
-| Laptop with USB‑C | PicClaw flashing, serial console, SSH | Any computer with USB |
-| Label maker / fine‑tip marker | Cable labeling | Masking tape + pen |
-| Crimping tool (optional) | Dupont terminal crimping | Pre‑crimped jumper wires |
-| Helping hands (optional) | Soldering assistance | Vice + patience |
+| Tool | Purpose |
+|------|---------|
+| Wire cutter/stripper (22–26 AWG) | Trimming and stripping sensor wires |
+| Small flat‑head screwdriver (#00) | Terminal block screws |
+| Digital multimeter | Continuity check, voltage verification, sensor test |
+| Soldering iron (25W+) + solder | Resistor lead soldering, transistor wiring |
+| Heat‑gun or lighter | Heat‑shrink tubing on soldered joints |
+| Laptop with USB‑C | PicClaw flashing, serial console, SSH |
 
 ---
 
-## 📦 Unboxing & Parts Check
-
-Before starting, verify you have all 14 core BOM items. Lay everything out and check:
-
-```
-☐ LicheeRV Nano board
-☐ USB‑C PSU (5V⎓2A min)
-☐ DHT22 sensors × 2
-☐ DS18B20 probe × 1
-☐ Water leak probe × 1
-☐ MQ‑2 module × 1
-☐ Reed switches × 2
-☐ SCT‑013‑030 × 1
-☐ ADS1115 module × 1
-☐ Active buzzer × 1
-☐ Red + green LED + 330Ω resistors
-☐ 400‑tie breadboard
-☐ Dupont jumper wire kit
-☐ Vented ABS enclosure
-☐ 4.7kΩ resistor (DS18B20 pull‑up)
-☐ 10kΩ resistor (DHT22 pull‑up, backup)
-☐ Cable glands × 4
-☐ Standoffs, heat‑shrink, zip ties
-```
-
-<!-- PHOTO: Unboxed parts laid out on workbench with labels -->
-
----
-
-## 📐 Step 1 — Bench‑Check the Board
+## Step 1 — Bench‑Check the Board
 
 **Goal:** Verify the LicheeRV Nano boots and runs PicClaw.
 
-### 1.1 Flash PicClaw (if not pre‑loaded)
-```bash
-# Download the PicClaw image for LicheeRV Nano
-wget https://picclaw.io/releases/latest/picclaw-licheerv-nano.img.xz
-
-# Write to microSD (assuming /dev/sdX on your laptop)
-xzcat picclaw-licheerv-nano.img.xz | sudo dd of=/dev/sdX bs=4M status=progress
-sync
-```
-
-### 1.2 First boot
-1. Insert microSD card into LicheeRV Nano.
-2. Connect USB‑C cable (data+power) to laptop or PSU.
-3. Wait 30–60 seconds for boot.
-4. Find the board on the network:
+1. **Flash PicClaw** (if not pre‑loaded):
    ```bash
-   # Option A: Serial console (115200 baud)
-   screen /dev/ttyUSB0 115200
-
-   # Option B: mDNS
-   ping picclaw-xxxxxxxx.local
-
-   # Option C: Check router DHCP assignments
+   wget https://picclaw.io/releases/latest/picclaw-licheerv-nano.img.xz
+   xzcat picclaw-licheerv-nano.img.xz | sudo dd of=/dev/sdX bs=4M status=progress
+   sync
+   ```
+2. Insert microSD, connect USB‑C power, wait 30–60s for boot.
+3. Verify:
+   ```bash
+   picclaw status
+   # → agent=picclaw, version=X.Y.Z, uptime=N seconds
    ```
 
-### 1.3 Verify PicClaw
-```bash
-picclaw status
-# → Should show: agent=picclaw, version=X.Y.Z, uptime=N seconds
+---
 
-picclaw gateway
-# → Should start the HTTP gateway on port 8080
+## Step 2 — Wire the Power Rails
 
-curl http://picclaw-xxxxxxxx.local:8080/healthz
-# → {"status":"ok","agent":"picclaw"}
-```
+1. Connect **3V3** (board pin 1) to breadboard **red (+)** rail.
+2. Connect **GND** (board pin 39) to breadboard **blue (−)** rail.
+3. Verify continuity: red rail to blue rail should read **open**.
+4. Power on briefly and measure **3.25–3.35V** between rails.
+5. **Power off** before connecting any sensors.
 
-> ✅ **Photo checkpoint:** Board powered on, serial console or SSH visible with `picclaw status` output.
+> ⚠️ Never connect or disconnect sensors while the board is powered.
 
 ---
 
-## 🔌 Step 2 — Wire the Power Rails
+## Step 3 — Wire I²C Bus (ADS1115)
 
-**Goal:** Build a reliable power distribution network on the breadboard.
-
-1. Insert the LicheeRV Nano into the breadboard (or connect via Dupont wires — recommended for prototyping).
-2. Run a **red (3V3)** wire from board pin 1 to the breadboard **red (+) power rail**.
-3. Run a **black (GND)** wire from board pin 39 to the breadboard **blue (−) ground rail**.
-4. **Prove the rails:** Use your multimeter in continuity mode between red rail and blue rail — should read **open** (infinite). Then power on briefly and measure **3.25–3.35V** between the rails.
-5. Power off before connecting any sensors.
-
-> ⚠️ **Never connect or disconnect sensors while the board is powered.** Always disconnect USB‑C first.
-
-> ✅ **Photo checkpoint:** Breadboard with only power rails wired, DMM showing 3.3V.
-
----
-
-## 🔬 Step 3 — Wire I²C Bus (ADS1115)
-
-The ADS1115 is the gateway for the SCT‑013 current clamp.
-
-1. Insert ADS1115 across the breadboard center gap.
-2. Wire:
-   - **VDD** → 3V3 rail
-   - **GND** → GND rail
-   - **SCL** → GPIO3 (pin 5 on board)
-   - **SDA** → GPIO2 (pin 3 on board)
-   - **ADDR** → GND (address 0x48)
-3. Power on and scan the I²C bus:
+1. Insert ADS1115 across breadboard center gap.
+2. **VDD** → 3V3 rail · **GND** → GND rail · **SCL** → GPIO3 · **SDA** → GPIO2 · **ADDR** → GND (0x48).
+3. Power on and scan:
    ```bash
    i2cdetect -y 0
    # → Should show device at 0x48
    ```
 
-> ⚠️ I²C pull‑up resistors (10kΩ) are usually built into the ADS1115 module. If you see flickering addresses, add external 10kΩ pull‑ups from SCL→3V3 and SDA→3V3.
-
-> ✅ **Photo checkpoint:** ADS1115 wired, `i2cdetect` output showing 0x48.
-
 ---
 
-## 🌡️ Step 4 — Wire DHT22 Sensors
+## Step 4 — Wire DHT22 Sensors (×2)
 
-**Two sensors — label them before wiring!**
+| Sensor | Pin | Connection |
+|--------|-----|-----------|
+| DHT22 #1 (room) | VCC → 3V3 · DATA → GPIO17 · GND → GND |
+| DHT22 #2 (HVAC) | VCC → 3V3 · DATA → GPIO18 · GND → GND |
 
-### DHT22 #1 (Room / rack exhaust)
-| Pin | Connect to |
-|-----|-----------|
-| VCC (pin 1) | 3V3 rail |
-| DATA (pin 2) | GPIO17 |
-| GND (pin 4) | GND rail |
-
-### DHT22 #2 (HVAC / cold aisle)
-| Pin | Connect to |
-|-----|-----------|
-| VCC (pin 1) | 3V3 rail |
-| DATA (pin 2) | GPIO18 |
-| GND (pin 4) | GND rail |
-
-### Pull‑up check
-Some DHT22 modules include a built‑in pull‑up resistor. Check by measuring resistance between DATA and VCC — if you see ~10kΩ, you're good. If open, add a 10kΩ resistor between DATA and 3V3.
-
-### Smoke test
+Add 10kΩ pull‑up from DATA to 3V3 if the module lacks one. Test:
 ```bash
 python drivers/read_dht22.py --pin GPIO17 --name room
 python drivers/read_dht22.py --pin GPIO18 --name hvac
 ```
 
-**Expected:**
-```json
-{"ok": true, "pin": "GPIO17", "name": "room", "temperature_c": 24.8, "humidity_percent": 45.2}
-```
+---
 
-> ⚠️ DHT22 can report 0% humidity or NaN if DATA line is improperly pulled up or cable is too long.
+## Step 5 — Wire DS18B20 Probe
 
-> ✅ **Photo checkpoint:** Both DHT22 wired, terminal showing JSON output from each.
+- **Red** → 3V3 · **Yellow (DATA)** → GPIO19 · **Black** → GND
+- **CRITICAL:** Solder a **4.7kΩ resistor** between GPIO19 and 3V3.
+- Verify pull‑up: measure ~4.7kΩ between GPIO19 and 3V3.
+- Test:
+  ```bash
+  python drivers/read_ds18b20.py --pin GPIO19
+  # → {"ok": true, "temperature_c": 23.6}
+  ```
 
 ---
 
-## 🌡️ Step 5 — Wire DS18B20 Probe
+## Step 6 — Wire Discrete Sensors
 
-**CRITICAL:** The DS18B20 requires a 4.7kΩ pull‑up on the data line. Without it, the sensor will not respond.
+| Sensor | VCC | GND | DATA | GPIO |
+|--------|-----|-----|------|------|
+| MQ‑2 smoke/gas | 3V3 | GND | DO | GPIO21 |
+| Water leak probe | 3V3 | GND | DO | GPIO20 |
+| Reed switch #1 (rack door) | — | GND | one leg | GPIO22 |
+| Reed switch #2 (room door) | — | GND | one leg | GPIO23 |
 
-1. Wire the waterproof probe:
-   - **Red** → 3V3 rail
-   - **Yellow (DATA)** → GPIO19
-   - **Black** → GND rail
-2. Solder a **4.7kΩ resistor** between GPIO19 (DATA) and 3V3.
-3. Cover the resistor leads with heat‑shrink.
-
-### Verify pull‑up
-Measure resistance between GPIO19 and 3V3 — should read **4.7kΩ ± 5%**.
-
-### Smoke test
-```bash
-python drivers/read_ds18b20.py --pin GPIO19
-```
-**Expected:**
-```json
-{"ok": true, "pin": "GPIO19", "temperature_c": 23.6}
-```
-
-> ⚠️ If you get `{"ok": false, "error": "device not found"}`, check:
-> - Pull‑up resistor value (4.7kΩ ± 1%, not 10kΩ)
-> - Wiring — red/black/yellow may vary by vendor
-> - 1‑Wire bus often needs the GPIO configured as `open_drain` with kernel `w1‑gpio` driver
-
-> ✅ **Photo checkpoint:** DS18B20 probe wired with visible pull‑up resistor, terminal output.
-
----
-
-## 🔔 Step 6 — Wire Discrete Sensors
-
-### MQ‑2 Smoke/Gas Module
-| Pin | Connect to |
-|-----|-----------|
-| VCC | 3V3 rail |
-| GND | GND rail |
-| DO | GPIO21 |
-| AO | *Leave unconnected* |
-
-The MQ‑2 module has a comparator (LM393) that drives DO HIGH when gas exceeds the potentiometer‑set threshold. The AO pin outputs raw analog voltage from the sensing element — it's unused in this configuration.
-
-> 🔧 **Calibration:** In clean air, adjust the on‑board potentiometer so the DO LED just turns off. This sets the trip threshold.
-
-### Water Leak Probe
-| Pin | Connect to |
-|-----|-----------|
-| VCC | 3V3 rail |
-| GND | GND rail |
-| DO | GPIO20 |
-
-Most leak probes output **HIGH** (3.3V) when moisture is detected and **LOW** when dry.
-
-### Reed Switches × 2
-Reed switches are polarity‑agnostic (passive devices). Connect:
-- **One leg** → GPIO22 (#1) or GPIO23 (#2)
-- **Other leg** → GND
-
-Configure PicClaw to enable **internal pull‑UP** on these GPIOs. When the magnet is near (door closed), the switch shorts to GND → GPIO reads LOW. When the door opens, the switch opens → pull‑up pulls GPIO HIGH.
-
-### Smoke test for discrete sensors
+Enable internal pull‑UP on GPIO22/GPIO23 for reed switches. Test all:
 ```bash
 python drivers/read_discrete.py --pin GPIO20 --name leak
 python drivers/read_discrete.py --pin GPIO21 --name smoke
 python drivers/read_discrete.py --pin GPIO22 --name door_rack
 python drivers/read_discrete.py --pin GPIO23 --name door_room
 ```
-**Expected:**
-```json
-{"ok": true, "pin": "GPIO20", "name": "leak", "active": false}
-```
-
-> ✅ **Photo checkpoint:** All discrete sensors wired, terminal showing all four sensor JSON outputs.
 
 ---
 
-## 🔊 Step 7 — Wire Indicators
+## Step 7 — Wire Indicators
 
-### Buzzer (via NPN transistor)
-GPIO24 cannot source enough current for a loud buzzer. Use a 2N2222 transistor:
+- **Buzzer:** GPIO24 → 1kΩ → Base(2N2222) · Emitter → GND · Collector → Buzzer(−) · Buzzer(+) → 3V3
+- **Red LED:** GPIO25 → 330Ω → Anode · Cathode → GND
+- **Green LED:** GPIO26 → 330Ω → Anode · Cathode → GND
 
-```
-GPIO24 ──┬─ 1kΩ ── Base (2N2222)
-         │
-         └───────── Emitter → GND
-                   Collector → Buzzer(−)
-                   Buzzer(+) → 3V3
-```
-
-This configuration lets the buzzer draw up to 200 mA from the 3V3 rail directly, controlled by GPIO24.
-
-### Red LED
-```
-GPIO25 ──┬─ 330Ω ── Red LED (Anode)
-         │                 (Cathode) → GND
-```
-
-### Green LED
-```
-GPIO26 ──┬─ 330Ω ── Green LED (Anode)
-         │                   (Cathode) → GND
-```
-
-### Smoke test
+Test:
 ```bash
-# Test buzzer
 picclaw gpio set GPIO24 high   # Buzzer ON
-sleep 1
-picclaw gpio set GPIO24 low    # Buzzer OFF
-
-# Test LEDs
 picclaw gpio set GPIO25 high   # Red ON
 picclaw gpio set GPIO26 high   # Green ON
 ```
 
-> ✅ **Photo checkpoint:** LEDs lit, buzzer audible.
+---
+
+## Step 8 — Wire SCT‑013 Current Clamp
+
+1. Plug SCT‑013 3.5mm jack: **tip (signal)** → ADS1115 A0 · **sleeve (GND)** → GND.
+2. Do **not** add burden resistors (SCT‑013‑030 has internal burden).
+3. Test:
+   ```bash
+   python drivers/read_sct013.py
+   # → {"ok": true, "current_A": 0.0, "raw_adc": 16384}
+   ```
+4. Clamp around a powered device, re-run to see non‑zero current.
 
 ---
 
-## ⚡ Step 8 — Wire SCT‑013 Current Clamp
-
-**⚠️ SAFETY FIRST:** The SCT‑013 clamp must be installed by a qualified person if used on mains wiring.
-
-1. Plug the SCT‑013 3.5mm jack into the ADS1115:
-   - **Jack tip (signal)** → ADS1115 A0
-   - **Jack sleeve (GND)** → ADS1115 GND (or breadboard GND)
-2. **Do NOT** add burden resistors — the SCT‑013‑030 has an internal burden resistor.
-
-### Test with a known load
-```bash
-# With the clamp around nothing (zero current)
-python drivers/read_sct013.py
-# → {"ok": true, "current_A": 0.0, "raw_adc": 16384}
-
-# Clamp around a powered device, then re-run
-python drivers/read_sct013.py
-# → {"ok": true, "current_A": 1.2, "raw_adc": 17200}
-```
-
-### Calibration constant
-The SCT‑013‑030 outputs 1V at 30A. With the ADS1115 at ±4.096V range (default), the conversion is:
-```
-Current (A) = (adc_reading - 16384) * (30.0 / 8192)
-```
-
-This formula is pre‑configured in the driver.
-
-> ✅ **Photo checkpoint:** SCT‑013 clamped around a device, terminal output showing non‑zero current.
-
----
-
-## 🏗️ Step 9 — Load the Scenario Config
+## Step 9 — Load the Scenario Config
 
 ```bash
-# From the repo root
 picclaw skill install ./kits/dc-guardian
-
-# Verify
 picclaw skill list
 # → dc-guardian (version 1.0.0) should be listed
-
-# Start the gateway
 picclaw gateway
 ```
 
-### Test each alert path (acceptance test)
+### Acceptance Tests
 
-| Test | Method | Expected Alert | Expected LED |
-|------|--------|---------------|-------------|
-| **High temp** | Warm DHT22 #1 gently with your hand | Warning alert via Telegram/Discord/webhook | Red LED ON |
-| **Leak** | Bridge leak probe with a wet cloth | Critical leak alert | Red LED ON, buzzer sounds |
-| **Smoke** | Press MQ‑2 module test button (if available) | Critical smoke alert | Red LED ON, buzzer sounds |
-| **Door open** | Move magnet away from reed switch | Security alert (door open 60s → warning) | Red LED ON |
-| **Current** | Clamp around a known load | Non‑zero current sample logged | Green LED ON |
-
----
-
-## 🏭 Step 10 — Install in the Rack Room
-
-1. **Power down** and disconnect all USB cables.
-2. **Prepare the enclosure:**
-   - Drill holes for cable glands (PG‑7: 12mm drill bit)
-   - Mount board on standoffs inside the enclosure
-   - Thread all sensor cables through glands
-3. **Route cables** with strain relief — label each:
-   ```
-   ┌─────────────────────────────────────┐
-   │  DHT22_ROOM    ──── Cable gland #1  │
-   │  DHT22_HVAC    ──── Cable gland #2  │
-   │  DS18B20       ──── Together w/ #2  │
-   │  LEAK_PROBE    ──── Cable gland #3  │
-   │  REED_RACK     ──── Together w/ #3  │
-   │  REED_ROOM     ──── Together w/ #3  │
-   │  SCT013        ──── Cable gland #4  │
-   └─────────────────────────────────────┘
-   ```
-4. **Place sensors** per the [placement rules in WIRING.md](WIRING.md#-installation-placement-rules).
-5. **Secure** all cables with zip ties inside and outside the enclosure.
-6. **Label** the enclosure: "DC GUARDIAN — DATA CENTER MONITOR"
-7. **Restore power** — confirm board boots and gateway starts.
-8. **Verify alerts** — trigger each test again to confirm alerts reach Telegram/Discord.
-
-> ✅ **Photo checkpoint:** Final enclosed unit, mounted sensors in place, cable labeling visible, dashboard/alert screenshot.
+| Test | Method | Expected Result |
+|------|--------|----------------|
+| High temp | Warm DHT22 #1 with hand | Red LED ON, alert sent |
+| Leak | Bridge leak probe with wet cloth | Red LED ON, buzzer sounds |
+| Smoke | Press MQ‑2 test button (if available) | Red LED ON, buzzer sounds |
+| Door open | Move magnet from reed switch | Alert after 60s |
+| Current | Clamp around known load | Non‑zero current logged, Green LED ON |
 
 ---
 
-## ✅ Acceptance Test Checklist
+## Step 10 — Install in the Rack Room
+
+1. Power down and disconnect all USB cables.
+2. Prepare the enclosure: drill holes for cable glands, mount board on standoffs.
+3. Thread all sensor cables through glands with strain relief.
+4. Place sensors per [placement rules](WIRING.md#-installation-placement-rules).
+5. Secure cables with zip ties, label each cable, label the enclosure.
+6. Restore power, verify boot, re‑run acceptance tests.
+
+---
+
+## ✅ Acceptance Checklist
 
 ```
-☐ DHT22 #1 reports ±0.5°C of reference thermometer
-☐ DHT22 #2 reports ±0.5°C of reference thermometer  
-☐ DS18B20 reports within ±0.5°C of DHT22 at same location
+☐ DHT22 #1 reports within ±0.5°C of reference
+☐ DHT22 #2 reports within ±0.5°C of reference
+☐ DS18B20 within ±0.5°C of DHT22 at same location
 ☐ Leak probe triggers alert when wet
 ☐ MQ‑2 smoke test triggers critical alert
 ☐ Reed switches register door state changes
-☐ SCT‑013 current reading within ±5% of reference clamp meter
+☐ SCT‑013 current reading within ±5% of reference
 ☐ Buzzer sounds on critical alerts
 ☐ Red LED illuminates on warning/critical
 ☐ Green LED illuminates when all sensors normal
-☐ Alerts reach Telegram within 10 seconds
-☐ Alerts reach Discord within 10 seconds
-☐ Webhook endpoint receives POST on alert
-☐ All cables labeled
-☐ Enclosure closed and secured
-☐ Unit installed in rack
+☐ Alerts reach Telegram/Discord within 10 seconds
+☐ All cables labeled, enclosure closed and secured
 ```

@@ -1,0 +1,60 @@
+# PicoClaw skill — DC Guardian
+name: dc-guardian
+version: 0.1.0
+description: Data center night shift monitoring — temperature, smoke, water ingress
+license: CERN-OHL-S-2.0
+
+board: lichee-rv-nano
+
+sensors:
+  - id: temperature
+    driver: drivers/dht22.py
+    pin: 4
+    interval_s: 30
+    unit: celsius
+    pull_up: true
+
+  - id: humidity
+    driver: drivers/dht22.py
+    pin: 4
+    interval_s: 30
+    unit: percent
+    pull_up: true
+
+  - id: smoke
+    driver: drivers/mq2_smoke.py
+    pin: 17
+    interval_s: 10
+    unit: ppm_equiv
+    warmup_s: 172800
+
+  - id: water_leak
+    driver: drivers/water_leak.py
+    pin: 27
+    interval_s: 5
+    unit: boolean
+    pull_up: true
+
+outputs:
+  mqtt:
+    host: ${MQTT_HOST}
+    port: 1883
+    topic_prefix: clawland/dc-guardian
+    qos: 1
+  webhook:
+    url: ${ALERT_WEBHOOK_URL}
+    timeout_s: 5
+
+storage:
+  local_db: /var/lib/picclaw/dc-guardian.db
+  retention_days: 30
+
+alerts_file: alerts.yaml
+
+self_test:
+  steps:
+    - read: temperature
+    - read: humidity
+    - read: smoke
+    - read: water_leak
+    - send_test_alert: true

@@ -1,0 +1,51 @@
+# DC Guardian alert thresholds and escalation
+# Defaults assume a conditioned room at 18–27 °C and 30–60 % RH.
+# Tune per room before trusting the kit.
+
+thresholds:
+  temperature:
+    warn: 27.0
+    critical: 32.0
+    clear_below: 25.0
+    unit: celsius
+    debounce_s: 120
+
+  humidity:
+    warn_high: 60.0
+    critical_high: 70.0
+    warn_low: 30.0
+    clear_margin: 5.0
+    unit: percent
+    debounce_s: 300
+
+  smoke:
+    warn: 300
+    critical: 800
+    clear_below: 200
+    unit: ppm_equiv
+    debounce_s: 10
+
+  water_leak:
+    critical: true
+    debounce_s: 5
+
+escalation:
+  - level: warn
+    after_s: 0
+    channels: [mqtt, webhook]
+  - level: critical
+    after_s: 0
+    channels: [mqtt, webhook, sms]
+  - level: critical
+    after_s: 300
+    channels: [sms, phone]
+    repeat_every_s: 900
+
+quiet_hours:
+  enabled: false
+  start: "07:00"
+  end: "19:00"
+
+recovery:
+  notify_on_clear: true
+  channel: webhook

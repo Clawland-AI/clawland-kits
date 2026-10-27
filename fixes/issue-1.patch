@@ -1,0 +1,10 @@
+The **DC Guardian** kit monitors server room environmental parameters 24/7, replacing the need for a night shift human operator. It detects high temperature/humidity conditions, smoke/fire indicators, and water leaks near cooling units or raised floors, feeding telemetry directly into a local PicClaw agent for automated escalation.
+
+---
+
+| Item | Description | Qty | Unit Price (USD) | Total (USD) | Purchase Link |
+|---|---|---|---|---|---|
+| **LicheeRV-Nano** | RISC-V SBC with Linux & NPU | 1 | $25.00 | $25.00 | [AliExpress](https://www.aliexpress.com/) |
+| **DHT22 / AM2302** | High-precision temp & humidity sensor | 2 | $5.00 | $10.00 | [Adafruit](https://www.adafruit.com/) |
+| **MQ-2** | Smoke & combustible gas sensor module | 1 | $4.00 | $4.00 | [Amazon](https://www.amazon.com/) |
+| **Water
